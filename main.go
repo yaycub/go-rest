@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -18,22 +19,32 @@ type Article struct {
 
 var articles []Article
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome Home")
+func homePage(response http.ResponseWriter, request *http.Request) {
+	fmt.Fprintf(response, "Welcome Home")
 	fmt.Println("endpoint hit: homepage")
 }
 
-func returnAllArticles(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("endpoint hit: all articles")
-	json.NewEncoder(w).Encode(articles)
+func createArticle(response http.ResponseWriter, request *http.Request) {
+	reqBody, _ := ioutil.ReadAll(request.Body)
+
+	var article Article
+	json.Unmarshal(reqBody, &article)
+	articles = append(articles, article)
+
+	json.NewEncoder(response).Encode(article)
 }
 
-func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
-	key := mux.Vars(r)["id"]
+func returnAllArticles(response http.ResponseWriter, request *http.Request) {
+	fmt.Println("endpoint hit: all articles")
+	json.NewEncoder(response).Encode(articles)
+}
+
+func returnSingleArticle(response http.ResponseWriter, request *http.Request) {
+	key := mux.Vars(request)["id"]
 	fmt.Println("endpoint hit: article by id")
 	for _, article := range articles {
 		if article.Id == key {
-			json.NewEncoder(w).Encode(article)
+			json.NewEncoder(response).Encode(article)
 		}
 	}
 }
@@ -41,9 +52,14 @@ func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
+	//GET
 	myRouter.HandleFunc("/", homePage)
 	myRouter.HandleFunc("/articles", returnAllArticles)
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
+
+	//POST
+	myRouter.HandleFunc("/article", createArticle).Methods("POST")
+
 	log.Fatal(http.ListenAndServe(":7890", myRouter))
 }
 
