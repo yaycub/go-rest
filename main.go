@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/yaycub/go-rest/connect"
 )
 
 type Article struct {
@@ -70,5 +71,6 @@ func main() {
 	}
 
 	fmt.Println("listening on port 7890")
+	connect.Connect()
 	handleRequests()
 }
